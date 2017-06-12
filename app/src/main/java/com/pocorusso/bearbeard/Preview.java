@@ -1,9 +1,11 @@
 package com.pocorusso.bearbeard;
 
+import android.app.Activity;
 import android.content.Context;
 import android.hardware.Camera;
 import android.hardware.Camera.Size;
 import android.util.Log;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -12,21 +14,22 @@ import android.view.ViewGroup;
 import java.io.IOException;
 import java.util.List;
 
-import static android.content.ContentValues.TAG;
-
 class Preview extends ViewGroup implements SurfaceHolder.Callback {
 
+    private static String TAG = "Preview";
     SurfaceView mSurfaceView;
     SurfaceHolder mHolder;
     Camera mCamera;
     Size mPreviewSize;
     List<Camera.Size> mSupportedPreviewSizes;
 
+
     Preview(Context context, SurfaceView surfaceView) {
         super(context);
 
         mSurfaceView = surfaceView;
-      //  addView(mSurfaceView);
+
+        
 
         // Install a SurfaceHolder.Callback so we get notified when the
         // underlying surface is created and destroyed.
@@ -35,16 +38,29 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
     }
 
-    public void setCamera(Camera camera) {
-        if (mCamera == camera) { return; }
+    public void setCamera(int cameraId, Camera camera) {
+        Log.d(TAG, "setCamera called.");
+        if (mCamera == camera) {
+            return;
+        }
 
         stopPreviewAndFreeCamera();
 
         mCamera = camera;
 
         if (mCamera != null) {
-            List<Camera.Size> localSizes = mCamera.getParameters().getSupportedPreviewSizes();
-            mSupportedPreviewSizes = localSizes;
+            setCameraDisplayOrientation(cameraId, camera);
+            Camera.Parameters params = mCamera.getParameters();
+            mSupportedPreviewSizes = params.getSupportedPreviewSizes();
+            List<String> focusModes = params.getSupportedFocusModes();
+            if (focusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
+                // set the focus mode
+                params.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
+            }
+
+            // set Camera parameters
+            mCamera.setParameters(params);
+
             requestLayout();
 
             try {
@@ -54,6 +70,40 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
             }
             mCamera.startPreview();
         }
+    }
+
+
+    private void setCameraDisplayOrientation(int cameraId, android.hardware.Camera camera) {
+
+        android.hardware.Camera.CameraInfo info =
+                new android.hardware.Camera.CameraInfo();
+        android.hardware.Camera.getCameraInfo(cameraId, info);
+        int rotation = ((Activity) getContext()).getWindowManager().getDefaultDisplay()
+                .getRotation();
+        int degrees = 0;
+        switch (rotation) {
+            case Surface.ROTATION_0:
+                degrees = 0;
+                break;
+            case Surface.ROTATION_90:
+                degrees = 90;
+                break;
+            case Surface.ROTATION_180:
+                degrees = 180;
+                break;
+            case Surface.ROTATION_270:
+                degrees = 270;
+                break;
+        }
+
+        int result;
+        if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+            result = (info.orientation + degrees) % 360;
+            result = (360 - result) % 360;  // compensate the mirror
+        } else {  // back-facing
+            result = (info.orientation - degrees + 360) % 360;
+        }
+        camera.setDisplayOrientation(result);
     }
 
 
@@ -105,6 +155,7 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        Log.d(TAG, "onMeasure called.");
         // We purposely disregard child measurements because act as a
         // wrapper to a SurfaceView that centers the camera preview instead
         // of stretching it.
@@ -117,7 +168,9 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
         }
 
     }
+
     private Size getOptimalPreviewSize(List<Size> sizes, int w, int h) {
+        Log.d(TAG, "getOptimalPreviewSize");
         final double ASPECT_TOLERANCE = 0.1;
         double targetRatio = (double) w / h;
         if (sizes == null) return null;
@@ -153,6 +206,7 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
+        Log.d(TAG, "surfaceCreated called.");
         if (mCamera != null) {
             List<Camera.Size> localSizes = mCamera.getParameters().getSupportedPreviewSizes();
             mSupportedPreviewSizes = localSizes;
@@ -171,13 +225,13 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
 
     @Override
     public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
-
-        if(mCamera != null) {
+        Log.d(TAG, "surfaceChanged called.");
+        if (mCamera != null) {
 
             // If your preview can change or rotate, take care of those events here.
             // Make sure to stop the preview before resizing or reformatting it.
 
-            if (mHolder.getSurface() == null || mPreviewSize==null){
+            if (mHolder.getSurface() == null || mPreviewSize == null) {
                 // preview surface does not exist
                 return;
             }
@@ -185,7 +239,7 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
             // stop preview before making changes
             try {
                 mCamera.stopPreview();
-            } catch (Exception e){
+            } catch (Exception e) {
                 // ignore: tried to stop a non-existent preview
             }
 
@@ -202,15 +256,15 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
                 mCamera.setPreviewDisplay(mHolder);
                 mCamera.startPreview();
 
-            } catch (Exception e){
+            } catch (Exception e) {
                 Log.d(TAG, "Error starting camera preview: " + e.getMessage());
             }
         }
-
     }
 
     @Override
     public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
+        Log.d(TAG, "surfaceDestroyed called.");
         // Surface will be destroyed when we return, so stop the preview.
         if (mCamera != null) {
             mCamera.stopPreview();
