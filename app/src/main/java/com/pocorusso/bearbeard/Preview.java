@@ -2,8 +2,10 @@ package com.pocorusso.bearbeard;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.Configuration;
 import android.hardware.Camera;
 import android.hardware.Camera.Size;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -21,15 +23,26 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
     SurfaceHolder mHolder;
     Camera mCamera;
     Size mPreviewSize;
-    List<Camera.Size> mSupportedPreviewSizes;
 
 
-    Preview(Context context, SurfaceView surfaceView) {
+    Preview(Context context) {
         super(context);
+        init(context);
+    }
 
-        mSurfaceView = surfaceView;
+    Preview(Context context, AttributeSet attrs) {
+        super(context, attrs);
+        init(context);
+    }
 
-        
+    Preview(Context context, AttributeSet attrs, int defStyle) {
+        super(context, attrs, defStyle);
+        init(context);
+    }
+
+    private void init(Context context) {
+        mSurfaceView = new SurfaceView(context);
+        this.addView(mSurfaceView);
 
         // Install a SurfaceHolder.Callback so we get notified when the
         // underlying surface is created and destroyed.
@@ -38,20 +51,21 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
     }
 
+
+
     public void setCamera(int cameraId, Camera camera) {
-        Log.d(TAG, "setCamera called.");
+        Log.d(TAG, "setCamera called. cameraId =" + cameraId);
         if (mCamera == camera) {
             return;
         }
 
-        stopPreviewAndFreeCamera();
+        //stopPreviewAndFreeCamera();
 
         mCamera = camera;
 
         if (mCamera != null) {
             setCameraDisplayOrientation(cameraId, camera);
             Camera.Parameters params = mCamera.getParameters();
-            mSupportedPreviewSizes = params.getSupportedPreviewSizes();
             List<String> focusModes = params.getSupportedFocusModes();
             if (focusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO)) {
                 // set the focus mode
@@ -127,7 +141,9 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
+
         if (changed && getChildCount() > 0) {
+            Log.d(TAG, "onLayout");
             final View child = getChildAt(0);
 
             final int width = r - l;
@@ -140,31 +156,48 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
                 previewHeight = mPreviewSize.height;
             }
 
+            Log.d(TAG, "onLayout previewWidth=" + previewWidth + ", previewHeight="+previewHeight);
             // Center the child SurfaceView within the parent.
             if (width * previewHeight > height * previewWidth) {
                 final int scaledChildWidth = previewWidth * height / previewHeight;
+                Log.d(TAG, "onLayout scaledChildWidth=" + scaledChildWidth);
                 child.layout((width - scaledChildWidth) / 2, 0,
                         (width + scaledChildWidth) / 2, height);
             } else {
                 final int scaledChildHeight = previewHeight * width / previewWidth;
+                Log.d(TAG, "onLayout scaledChildHeight=" + scaledChildHeight);
                 child.layout(0, (height - scaledChildHeight) / 2,
                         width, (height + scaledChildHeight) / 2);
             }
         }
+
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         Log.d(TAG, "onMeasure called.");
+
         // We purposely disregard child measurements because act as a
         // wrapper to a SurfaceView that centers the camera preview instead
         // of stretching it.
+        //Requirement to set the measured dimenstion
         final int width = resolveSize(getSuggestedMinimumWidth(), widthMeasureSpec);
         final int height = resolveSize(getSuggestedMinimumHeight(), heightMeasureSpec);
         setMeasuredDimension(width, height);
 
-        if (mSupportedPreviewSizes != null) {
-            mPreviewSize = getOptimalPreviewSize(mSupportedPreviewSizes, width, height);
+        if (mCamera != null) {
+            List<Camera.Size> supportedPreviewSizes = mCamera.getParameters().getSupportedPreviewSizes();
+            if (supportedPreviewSizes != null) {
+                Log.d(TAG, "measuredSize w=" + width + ", h=" + height);
+                Size newSize = getOptimalPreviewSize(supportedPreviewSizes, width, height);
+                Log.d(TAG, "newSize w=" + newSize.width + ", h=" + newSize.height);
+                if (newSize != mPreviewSize) {
+                    mPreviewSize = newSize;
+                    // stop preview before making changes
+                    setPreviewSize();
+                }
+            }
+
         }
 
     }
@@ -172,34 +205,33 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
     private Size getOptimalPreviewSize(List<Size> sizes, int w, int h) {
         Log.d(TAG, "getOptimalPreviewSize");
         final double ASPECT_TOLERANCE = 0.1;
-        double targetRatio = (double) w / h;
+
         if (sizes == null) return null;
 
         Size optimalSize = null;
         double minDiff = Double.MAX_VALUE;
 
-        int targetHeight = h;
+        double targetRatio;
+        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+            targetRatio = (double) h / w;
+        } else {
+            targetRatio = (double) w / h;
+        }
+
+        Log.d(TAG, "TargetRatio=" + targetRatio);
 
         // Try to find an size match aspect ratio and size
         for (Size size : sizes) {
             double ratio = (double) size.width / size.height;
-            if (Math.abs(ratio - targetRatio) > ASPECT_TOLERANCE) continue;
-            if (Math.abs(size.height - targetHeight) < minDiff) {
+            Log.d(TAG, "Trying ratio=" + ratio + ", w=" + size.width + ", h=" + size.height);
+
+           //find the optimal ratio
+            if(Math.abs(ratio - targetRatio) < minDiff) {
                 optimalSize = size;
-                minDiff = Math.abs(size.height - targetHeight);
+                minDiff = Math.abs(ratio - targetRatio);
             }
         }
 
-        // Cannot find the one match the aspect ratio, ignore the requirement
-        if (optimalSize == null) {
-            minDiff = Double.MAX_VALUE;
-            for (Size size : sizes) {
-                if (Math.abs(size.height - targetHeight) < minDiff) {
-                    optimalSize = size;
-                    minDiff = Math.abs(size.height - targetHeight);
-                }
-            }
-        }
         return optimalSize;
     }
 
@@ -208,8 +240,6 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
     public void surfaceCreated(SurfaceHolder holder) {
         Log.d(TAG, "surfaceCreated called.");
         if (mCamera != null) {
-            List<Camera.Size> localSizes = mCamera.getParameters().getSupportedPreviewSizes();
-            mSupportedPreviewSizes = localSizes;
             requestLayout();
 
             try {
@@ -230,12 +260,26 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
 
             // If your preview can change or rotate, take care of those events here.
             // Make sure to stop the preview before resizing or reformatting it.
-
             if (mHolder.getSurface() == null || mPreviewSize == null) {
                 // preview surface does not exist
                 return;
             }
 
+
+            // start preview with new settings
+            try {
+                mCamera.setPreviewDisplay(mHolder);
+            } catch (Exception e) {
+                Log.d(TAG, "Error starting camera preview: " + e.getMessage());
+            }
+
+            setPreviewSize();
+        }
+    }
+
+    private void setPreviewSize() {
+        if (mPreviewSize != null) {
+            Log.d(TAG, "setPreviewSize: w=" + mPreviewSize.width + " ,h=" + mPreviewSize.height);
             // stop preview before making changes
             try {
                 mCamera.stopPreview();
@@ -245,21 +289,19 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
 
             Camera.Parameters parameters = mCamera.getParameters();
             parameters.setPreviewSize(mPreviewSize.width, mPreviewSize.height);
-            requestLayout();
+
             mCamera.setParameters(parameters);
 
             // set preview size and make any resize, rotate or
             // reformatting changes here
+            mCamera.startPreview();
 
-            // start preview with new settings
-            try {
-                mCamera.setPreviewDisplay(mHolder);
-                mCamera.startPreview();
-
-            } catch (Exception e) {
-                Log.d(TAG, "Error starting camera preview: " + e.getMessage());
-            }
+            requestLayout();
+        } else {
+            Log.d(TAG, "setPreviewSize mPreviewSize is null");
         }
+
+
     }
 
     @Override

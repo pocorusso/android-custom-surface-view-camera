@@ -46,7 +46,7 @@ public class CameraHandlerThread extends HandlerThread {
             public void handleMessage(Message msg) {
 
                 if (msg.what == CAMERA_OPEN) {
-                    Log.d(TAG, "Camera open");
+                    Log.d(TAG, "onLooperPrepared calling safeCameraOpen");
                     int cameraId = msg.arg1;
                     safeCameraOpen(cameraId);
                 }
@@ -57,6 +57,7 @@ public class CameraHandlerThread extends HandlerThread {
     @Override
     public boolean quit() {
         Log.d(TAG, "Quitting");
+
         mHasQuit = true;
         return super.quit();
     }
@@ -76,7 +77,7 @@ public class CameraHandlerThread extends HandlerThread {
      */
     public void releaseCameraAndPreview() {
         if (mCamera != null) {
-            Log.d(TAG, "Release camera and preview");
+            Log.d(TAG, "releaseCameraAndPreview");
             mCamera.stopPreview();
             mCamera.release();
             mCamera = null;
@@ -84,6 +85,7 @@ public class CameraHandlerThread extends HandlerThread {
     }
 
     private void safeCameraOpen(int cameraId) {
+        Log.d(TAG, "safeCameraOpen");
         boolean qOpened = false;
 
         try {

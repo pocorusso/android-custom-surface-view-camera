@@ -7,7 +7,6 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -23,17 +22,20 @@ public class CameraFragment extends Fragment implements CameraHandlerThread.Came
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
+        Log.d(TAG, "onCreate started.");
         super.onCreate(savedInstanceState);
 
         Handler responseHandler = new Handler();//creating the response handler on the UI thread
         mCameraHandlerThread = new CameraHandlerThread(TAG, responseHandler, this);
         mCameraHandlerThread.start();
         mCameraHandlerThread.getLooper();
-        Log.i(TAG, "CameraHandlerThread started.");
+        Log.d(TAG, "camera handler thread started.");
+
     }
 
     @Override
     public void onResume() {
+        Log.d(TAG, "onResume started.");
         super.onResume();
 
         //open camera on a background thread via an handler
@@ -43,8 +45,9 @@ public class CameraFragment extends Fragment implements CameraHandlerThread.Came
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
+        Log.d(TAG, "onCreateView started.");
         View v = inflater.inflate(R.layout.fragment_camera, container, false);
-        mPreview = new Preview(getActivity(), (SurfaceView)v.findViewById(R.id.surface_view_preview));
+        mPreview = (Preview)v.findViewById(R.id.surface_view_preview);
 
         mBtnTakePicture = (Button)v.findViewById(R.id.btn_take_picture);
         mBtnTakePicture.setOnClickListener(new View.OnClickListener() {
@@ -63,6 +66,7 @@ public class CameraFragment extends Fragment implements CameraHandlerThread.Came
      */
     @Override
     public void onCameraOpened(int cameraId, Camera camera) {
+        Log.d(TAG, "onCameraOpened started.");
         mPreview.setCamera(cameraId, camera);
     }
 
@@ -71,7 +75,9 @@ public class CameraFragment extends Fragment implements CameraHandlerThread.Came
      */
     @Override
     public void onPause() {
+        Log.d(TAG, "onPause started.");
         super.onPause();
+        mCameraHandlerThread.releaseCameraAndPreview();
         mPreview.setCamera(0,null);
     }
 
@@ -80,6 +86,7 @@ public class CameraFragment extends Fragment implements CameraHandlerThread.Came
      */
     @Override
     public void onDestroy() {
+        Log.d(TAG, "onDestroy started.");
         super.onDestroy();
         mCameraHandlerThread.quit();
         Log.i(TAG, "Camera thread quit.");
