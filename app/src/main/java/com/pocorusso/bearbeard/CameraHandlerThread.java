@@ -1,5 +1,6 @@
 package com.pocorusso.bearbeard;
 
+import android.content.Context;
 import android.hardware.Camera;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -13,7 +14,9 @@ public class CameraHandlerThread extends HandlerThread {
     }
 
     private static String TAG = "CameraHandlerThread";
-    private static int CAMERA_OPEN = 0;
+    private static final int CAMERA_OPEN = 0;
+    private static final int SAVE_PICTURE = 1;
+    private Context mContext;
     private Handler mRequestHandler;  //handler for worker thread
     private Handler mResponseHandler; //handler for UI thread
 
@@ -24,12 +27,15 @@ public class CameraHandlerThread extends HandlerThread {
 
     /**
      * Constructor
-     * @param name name of the worker thread
+     *
+     * @param name            name of the worker thread
+     * @param context         activity context
      * @param responseHandler Handler to be created on the UI thread
-     * @param cameraListener listener for work be run on the UI thread
+     * @param cameraListener  listener for work be run on the UI thread
      */
-    public CameraHandlerThread(String name, Handler responseHandler, CameraListener cameraListener) {
+    public CameraHandlerThread(String name, Context context, Handler responseHandler, CameraListener cameraListener) {
         super(name);
+        mContext = context;
         mResponseHandler = responseHandler;
         mCameraListener = cameraListener;
     }
@@ -45,10 +51,19 @@ public class CameraHandlerThread extends HandlerThread {
             @Override
             public void handleMessage(Message msg) {
 
-                if (msg.what == CAMERA_OPEN) {
-                    Log.d(TAG, "onLooperPrepared calling safeCameraOpen");
-                    int cameraId = msg.arg1;
-                    safeCameraOpen(cameraId);
+                switch (msg.what) {
+                    case CAMERA_OPEN:
+                        Log.d(TAG, "onLooperPrepared calling safeCameraOpen");
+                        int cameraId = msg.arg1;
+                        safeCameraOpen(cameraId);
+                        break;
+                    case SAVE_PICTURE: {
+                        Log.d(TAG, "onLooperPrepared calling savePictureInPrivateStorage");
+                        PictureUtils.savePictureInPrivateStorage(mContext, (byte[]) msg.obj);
+                        break;
+                    }
+                    default:
+                        //do nothing
                 }
             }
         };
@@ -65,6 +80,7 @@ public class CameraHandlerThread extends HandlerThread {
     /**
      * Called from the UI thread to queue up work to
      * open the camera
+     *
      * @param cameraId
      */
     public void queueOpenCamera(int cameraId) {
@@ -91,7 +107,7 @@ public class CameraHandlerThread extends HandlerThread {
         try {
             releaseCameraAndPreview();
             mCamera = Camera.open(cameraId);
-            if(mCamera != null) {
+            if (mCamera != null) {
                 mCameraId = cameraId;
                 notifyCameraOpened();
             }
@@ -111,6 +127,35 @@ public class CameraHandlerThread extends HandlerThread {
             }
         });
     }
+
+    public void takePicture() {
+        if (mCamera != null) {
+            mCamera.takePicture(mShutterCallback, mRawCallback, mJpegCallback);
+        }
+    }
+
+
+    Camera.ShutterCallback mShutterCallback = new Camera.ShutterCallback() {
+        public void onShutter() {
+            //			 Log.d(TAG, "onShutter'd");
+        }
+    };
+
+    Camera.PictureCallback mRawCallback = new Camera.PictureCallback() {
+        @Override
+        public void onPictureTaken(byte[] bytes, Camera camera) {
+
+        }
+    };
+
+    Camera.PictureCallback mJpegCallback = new Camera.PictureCallback() {
+        public void onPictureTaken(byte[] data, Camera camera) {
+            Log.d(TAG, "onPictureTaken - jpeg");
+            mRequestHandler.obtainMessage(SAVE_PICTURE, data).sendToTarget();
+        }
+    };
+
+
 
 
 }

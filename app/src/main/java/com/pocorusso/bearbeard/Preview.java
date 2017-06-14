@@ -25,17 +25,17 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
     Size mPreviewSize;
 
 
-    Preview(Context context) {
+    public Preview(Context context) {
         super(context);
         init(context);
     }
 
-    Preview(Context context, AttributeSet attrs) {
+    public Preview(Context context, AttributeSet attrs) {
         super(context, attrs);
         init(context);
     }
 
-    Preview(Context context, AttributeSet attrs, int defStyle) {
+    public Preview(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         init(context);
     }
@@ -53,13 +53,14 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
 
 
 
+    /** The calling thread should already stop and release the camera
+     * before they set the camera
+     */
     public void setCamera(int cameraId, Camera camera) {
         Log.d(TAG, "setCamera called. cameraId =" + cameraId);
         if (mCamera == camera) {
             return;
         }
-
-        //stopPreviewAndFreeCamera();
 
         mCamera = camera;
 
@@ -88,7 +89,6 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
 
 
     private void setCameraDisplayOrientation(int cameraId, android.hardware.Camera camera) {
-
         android.hardware.Camera.CameraInfo info =
                 new android.hardware.Camera.CameraInfo();
         android.hardware.Camera.getCameraInfo(cameraId, info);
@@ -177,9 +177,6 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         Log.d(TAG, "onMeasure called.");
 
-        // We purposely disregard child measurements because act as a
-        // wrapper to a SurfaceView that centers the camera preview instead
-        // of stretching it.
         //Requirement to set the measured dimenstion
         final int width = resolveSize(getSuggestedMinimumWidth(), widthMeasureSpec);
         final int height = resolveSize(getSuggestedMinimumHeight(), heightMeasureSpec);
@@ -211,6 +208,9 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
         Size optimalSize = null;
         double minDiff = Double.MAX_VALUE;
 
+        //The supported sizes we get from the camera doesn't change w and h when
+        //the phone rotate, therefore we have to adjust our ratio when
+        //the app rotate in order to find the optimal ratio.
         double targetRatio;
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
             targetRatio = (double) h / w;
@@ -223,7 +223,7 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
         // Try to find an size match aspect ratio and size
         for (Size size : sizes) {
             double ratio = (double) size.width / size.height;
-            Log.d(TAG, "Trying ratio=" + ratio + ", w=" + size.width + ", h=" + size.height);
+            //Log.d(TAG, "Trying ratio=" + ratio + ", w=" + size.width + ", h=" + size.height);
 
            //find the optimal ratio
             if(Math.abs(ratio - targetRatio) < minDiff) {

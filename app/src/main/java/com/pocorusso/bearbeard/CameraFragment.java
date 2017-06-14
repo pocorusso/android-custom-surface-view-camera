@@ -1,6 +1,8 @@
 package com.pocorusso.bearbeard;
 
+import android.content.Intent;
 import android.hardware.Camera;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
@@ -10,6 +12,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+
+import java.io.File;
 
 public class CameraFragment extends Fragment implements CameraHandlerThread.CameraListener {
 
@@ -26,7 +30,7 @@ public class CameraFragment extends Fragment implements CameraHandlerThread.Came
         super.onCreate(savedInstanceState);
 
         Handler responseHandler = new Handler();//creating the response handler on the UI thread
-        mCameraHandlerThread = new CameraHandlerThread(TAG, responseHandler, this);
+        mCameraHandlerThread = new CameraHandlerThread(TAG, getActivity(), responseHandler, this);
         mCameraHandlerThread.start();
         mCameraHandlerThread.getLooper();
         Log.d(TAG, "camera handler thread started.");
@@ -54,6 +58,7 @@ public class CameraFragment extends Fragment implements CameraHandlerThread.Came
             @Override
             public void onClick(View view) {
                 //take picture here;
+                mCameraHandlerThread.takePicture();
             }
         });
 
@@ -92,5 +97,11 @@ public class CameraFragment extends Fragment implements CameraHandlerThread.Came
         Log.i(TAG, "Camera thread quit.");
     }
 
+
+    private void refreshGallery(File file) {
+        Intent mediaScanIntent = new Intent( Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        mediaScanIntent.setData(Uri.fromFile(file));
+        getActivity().sendBroadcast(mediaScanIntent);
+    }
 
 }
