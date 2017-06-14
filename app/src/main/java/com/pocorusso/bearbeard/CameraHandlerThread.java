@@ -7,10 +7,13 @@ import android.os.HandlerThread;
 import android.os.Message;
 import android.util.Log;
 
+import java.io.File;
+
 public class CameraHandlerThread extends HandlerThread {
 
     public interface CameraListener {
         void onCameraOpened(int cameraId, Camera camera);
+        void onPictureReady(File file);
     }
 
     private static String TAG = "CameraHandlerThread";
@@ -55,11 +58,17 @@ public class CameraHandlerThread extends HandlerThread {
                     case CAMERA_OPEN:
                         Log.d(TAG, "onLooperPrepared calling safeCameraOpen");
                         int cameraId = msg.arg1;
-                        safeCameraOpen(cameraId);
+                        mCamera = safeCameraOpen(cameraId);
+                        if (mCamera != null) {
+                            notifyCameraOpened();
+                        }
                         break;
                     case SAVE_PICTURE: {
                         Log.d(TAG, "onLooperPrepared calling savePictureInPrivateStorage");
-                        PictureUtils.savePictureInPrivateStorage(mContext, (byte[]) msg.obj);
+                        File file = PictureUtils.savePictureInPrivateStorage(mContext, (byte[]) msg.obj);
+                        if(file!=null) {
+                            notifiedPictureReady(file);
+                        }
                         break;
                     }
                     default:
@@ -100,21 +109,24 @@ public class CameraHandlerThread extends HandlerThread {
         }
     }
 
-    private void safeCameraOpen(int cameraId) {
+    public void cameraStartPreview() {
+        Log.d(TAG, "cameraStartPreview");
+        mCamera.startPreview();
+    }
+
+
+    private Camera safeCameraOpen(int cameraId) {
         Log.d(TAG, "safeCameraOpen");
         boolean qOpened = false;
-
+        Camera camera = null;
         try {
             releaseCameraAndPreview();
-            mCamera = Camera.open(cameraId);
-            if (mCamera != null) {
-                mCameraId = cameraId;
-                notifyCameraOpened();
-            }
+            camera = Camera.open(cameraId);
         } catch (Exception e) {
             Log.e(TAG, "Failed to open Camera");
             e.printStackTrace();
         }
+        return camera;
     }
 
     private void notifyCameraOpened() {
@@ -123,6 +135,17 @@ public class CameraHandlerThread extends HandlerThread {
                 Log.d(TAG, "Camera opened. Calling listener.");
                 if (!mHasQuit) {
                     mCameraListener.onCameraOpened(mCameraId, mCamera);
+                }
+            }
+        });
+    }
+
+    private void notifiedPictureReady(final File file) {
+        mResponseHandler.post(new Runnable() {
+            public void run() {
+                Log.d(TAG, "Picture ready. Calling listener.");
+                if (!mHasQuit) {
+                    mCameraListener.onPictureReady(file);
                 }
             }
         });
@@ -152,6 +175,11 @@ public class CameraHandlerThread extends HandlerThread {
         public void onPictureTaken(byte[] data, Camera camera) {
             Log.d(TAG, "onPictureTaken - jpeg");
             mRequestHandler.obtainMessage(SAVE_PICTURE, data).sendToTarget();
+
+            //For some reason the camera does not stop the preview after
+            //take picture after the first time so we have to
+            //manually stop the preview? Something to look into
+            mCamera.stopPreview();
         }
     };
 

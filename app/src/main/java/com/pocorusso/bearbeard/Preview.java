@@ -83,6 +83,7 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            Log.d(TAG, "startPreview");
             mCamera.startPreview();
         }
     }
@@ -294,6 +295,7 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
 
             // set preview size and make any resize, rotate or
             // reformatting changes here
+            Log.d(TAG, "setPreviewSize startPreview");
             mCamera.startPreview();
 
             requestLayout();

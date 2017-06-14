@@ -11,7 +11,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+import android.widget.ImageButton;
 
 import java.io.File;
 
@@ -21,7 +21,9 @@ public class CameraFragment extends Fragment implements CameraHandlerThread.Came
     private static int DEFAULT_CAMERA_ID = 0;
 
     Preview mPreview;
-    Button mBtnTakePicture;
+    ImageButton mBtnTakePicture;
+    ImageButton mBtnUpload;
+    ImageButton mBtnRefresh;
     CameraHandlerThread mCameraHandlerThread;
 
     @Override
@@ -51,17 +53,38 @@ public class CameraFragment extends Fragment implements CameraHandlerThread.Came
                              Bundle savedInstanceState) {
         Log.d(TAG, "onCreateView started.");
         View v = inflater.inflate(R.layout.fragment_camera, container, false);
-        mPreview = (Preview)v.findViewById(R.id.surface_view_preview);
+        mPreview = (Preview)v.findViewById(R.id.preview_camera);
 
-        mBtnTakePicture = (Button)v.findViewById(R.id.btn_take_picture);
+        mBtnTakePicture = (ImageButton)v.findViewById(R.id.btn_take_picture);
         mBtnTakePicture.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
                 //take picture here;
                 mCameraHandlerThread.takePicture();
+
             }
         });
 
+        mBtnUpload = (ImageButton) v.findViewById(R.id.btn_upload);
+        mBtnUpload.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //upload picture for processing
+
+            }
+        });
+
+        mBtnRefresh = (ImageButton) v.findViewById(R.id.btn_refresh);
+        mBtnRefresh.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                //retake picture
+                mCameraHandlerThread.cameraStartPreview();
+
+                setButtonsState(ButtonsState.TAKE_PICTURE);
+            }
+        });
         return v;
     }
 
@@ -104,4 +127,40 @@ public class CameraFragment extends Fragment implements CameraHandlerThread.Came
         getActivity().sendBroadcast(mediaScanIntent);
     }
 
+    @Override
+    public void onPictureReady(File file) {
+       setButtonsState(ButtonsState.UPLOAD);
+    }
+
+    private static enum ButtonsState {
+        TAKE_PICTURE,
+        UPLOAD
+    }
+    private void setButtonsState(ButtonsState state) {
+        switch(state) {
+            case TAKE_PICTURE:
+                mBtnTakePicture.setClickable(true);
+                mBtnTakePicture.setVisibility(View.VISIBLE);
+
+                mBtnRefresh.setClickable(false);
+                mBtnRefresh.setVisibility(View.INVISIBLE);
+
+                mBtnUpload.setClickable(false);
+                mBtnUpload.setVisibility(View.INVISIBLE);
+                break;
+            case UPLOAD:
+                mBtnTakePicture.setClickable(false);
+                mBtnTakePicture.setVisibility(View.INVISIBLE);
+
+                mBtnRefresh.setClickable(true);
+                mBtnRefresh.setVisibility(View.VISIBLE);
+
+                mBtnUpload.setClickable(true);
+                mBtnUpload.setVisibility(View.VISIBLE);
+                break;
+            default:
+                //do nothing
+        }
+
+    }
 }

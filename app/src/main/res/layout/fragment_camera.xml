@@ -8,19 +8,43 @@
     tools:context="com.pocorusso.bearbeard.CameraActivity"
     android:orientation="vertical">
 
-    <Button
+    <ImageButton
         android:id="@+id/btn_take_picture"
         android:layout_width="100dp"
         android:layout_height="100dp"
         android:layout_alignParentBottom="true"
-        android:layout_weight=".30"/>
+        android:layout_weight=".30"
+        app:srcCompat="@android:drawable/ic_menu_camera"/>
+
+    <ImageButton
+        android:id="@+id/btn_upload"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_alignParentBottom="true"
+        android:layout_below="@+id/surface_view_preview"
+        android:layout_toEndOf="@+id/btn_take_picture"
+        app:srcCompat="@android:drawable/ic_menu_upload"
+        android:clickable="false"
+        android:visibility="invisible"/>
+
+    <ImageButton
+        android:id="@+id/btn_refresh"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_alignParentBottom="true"
+        android:layout_toEndOf="@+id/btn_upload"
+        app:srcCompat="@android:drawable/ic_menu_revert"
+        android:visibility="invisible"
+        android:clickable="false"/>
 
     <com.pocorusso.bearbeard.Preview
-        android:id="@+id/surface_view_preview"
+        android:id="@+id/preview_camera"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@id/btn_take_picture"
         android:layout_weight=".70"/>
+
+
 
 
 </RelativeLayout>

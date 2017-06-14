@@ -54,7 +54,7 @@ public class PictureUtils {
     protected static File savePictureInPrivateStorage(Context context, byte[] data) {
         File savedFile = null;
         try {
-            savePicture(PictureUtils.getPrivateFileHandle(context), data);
+            savedFile = savePicture(PictureUtils.getPrivateFileHandle(context), data);
         } catch (FileNotFoundException e) {
             Log.e(TAG, "Failed to open private file handle.");
             e.printStackTrace();
@@ -66,7 +66,8 @@ public class PictureUtils {
     protected static File savePictureInPublicStorage(Context context, byte[] data) {
         File savedFile = null;
         try {
-            updateMediaScanner(context, savePicture(PictureUtils.getPublicFileHandle(), data));
+            savedFile = savePicture(PictureUtils.getPublicFileHandle(), data);
+            updateMediaScanner(context, savedFile);
         } catch (FileNotFoundException e) {
             Log.e(TAG, "Failed to open private file handle.");
             e.printStackTrace();
