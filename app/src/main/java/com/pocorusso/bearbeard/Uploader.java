@@ -17,15 +17,21 @@ import java.io.File;
 
 public class Uploader {
 
+    public interface UploadListener {
+        void onUploaded(Bitmap bitmap);
+        void onUploadError();
+    }
+
     private static String TAG = "Uploader";
     private static String URL = "http://ec2-34-250-78-232.eu-west-1.compute.amazonaws.com/m2w";
     private static Uploader mInstance;
     private RequestQueue mQueue;
 
     /**
-     * Use an application context
+     * Singleton
      *
-     * @param context
+     * @param context Use an application context if you want the uploader to last
+     *                the life time of the application
      */
     public static synchronized Uploader getInstance(Context context) {
         if (mInstance == null) {
@@ -38,16 +44,18 @@ public class Uploader {
         mQueue = Volley.newRequestQueue(context);
     }
 
-    public void cancellAll() {
+    public void cancelAll() {
         mQueue.cancelAll(TAG);
     }
 
-    public void uploadFile(File file) {
+    public void uploadFile(File file, final UploadListener uploadListener) {
         if (file == null) return;
 
-        Bitmap bitmap = PictureUtils.getScaledBitmap(file.getPath(),100, 100);
+        Log.d(TAG, "uploadFile file: " + file.getPath());
+        //Convert bitmap to byte array
+        Bitmap bitmap = PictureUtils.getScaledBitmap(file.getPath(),50, 50);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 50, baos);
         final byte[] imageBytes = baos.toByteArray();
 
         ImageRequest postRequest = new ImageRequest(URL,
@@ -56,6 +64,7 @@ public class Uploader {
                     public void onResponse(Bitmap response) {
                         // response
                         Log.d(TAG, "onResponse");
+                        uploadListener.onUploaded(response);
                     }
                 },
                 100,100, ImageView.ScaleType.CENTER_INSIDE
@@ -63,8 +72,8 @@ public class Uploader {
                 , new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        // error
-                        Log.d(TAG, "Error.Response " + error.getMessage());
+                        Log.e(TAG, "Error.Response " + error.getMessage());
+                        uploadListener.onUploadError();
                     }
                 }
         ) {
