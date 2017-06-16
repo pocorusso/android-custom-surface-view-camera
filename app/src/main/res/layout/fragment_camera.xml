@@ -5,62 +5,62 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.pocorusso.bearbeard.CameraActivity"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    tools:context="com.pocorusso.bearbeard.CameraActivity">
 
-    <ImageButton
-        android:id="@+id/btn_take_picture"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
+    <LinearLayout
+        android:id="@+id/linearLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
         android:layout_alignParentBottom="true"
-        android:layout_weight=".30"
-        app:srcCompat="@android:drawable/ic_menu_camera"/>
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentStart="true"
+        android:layout_weight=".30">
 
-    <ImageButton
-        android:id="@+id/btn_upload"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:layout_alignParentBottom="true"
-        android:layout_below="@+id/surface_view_preview"
-        android:layout_toEndOf="@+id/btn_take_picture"
-        app:srcCompat="@android:drawable/ic_menu_upload"
-        android:clickable="false"
-        android:visibility="invisible"/>
+        <ImageButton
+            android:id="@+id/btn_take_picture"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
 
-    <ImageButton
-        android:id="@+id/btn_refresh"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:layout_alignParentBottom="true"
-        android:layout_toEndOf="@+id/btn_upload"
-        app:srcCompat="@android:drawable/ic_menu_revert"
-        android:visibility="invisible"
-        android:clickable="false"/>
+            app:srcCompat="@android:drawable/ic_menu_camera"/>
+
+        <ImageButton
+            android:id="@+id/btn_gallery"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:srcCompat="@android:drawable/ic_menu_gallery"/>
+
+        <ImageButton
+            android:id="@+id/btn_upload"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="false"
+            android:visibility="gone"
+            app:srcCompat="@android:drawable/ic_menu_upload"/>
+
+        <ImageButton
+            android:id="@+id/btn_refresh"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="false"
+            android:visibility="gone"
+            app:srcCompat="@android:drawable/ic_menu_revert"/>
+
+    </LinearLayout>
 
     <com.pocorusso.bearbeard.Preview
         android:id="@+id/preview_camera"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@id/btn_take_picture"
-        android:layout_weight=".70"/>
+        android:layout_weight=".70"
+        android:layout_above="@+id/linearLayout"/>
 
     <ImageView
         android:id="@+id/image_view_result"
         android:layout_width="200dp"
         android:layout_height="200dp"
         android:visibility="gone"/>
-
-    <ImageButton
-        android:id="@+id/btn_gallery"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:srcCompat="@android:drawable/ic_menu_gallery"
-        android:layout_alignParentBottom="true"
-        android:layout_below="@+id/preview_camera"
-        android:layout_alignParentEnd="true"
-        android:layout_toEndOf="@+id/btn_refresh"/>
-
-
 
 
 </RelativeLayout>

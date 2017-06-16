@@ -5,25 +5,57 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.pocorusso.bearbeard.CameraActivity"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    tools:context="com.pocorusso.bearbeard.CameraActivity">
 
-    <Button
-        android:id="@+id/btn_take_picture"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:layout_alignParentRight="true"
-        android:layout_weight=".30"/>
+    <LinearLayout
+        android:id="@+id/linearLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:orientation="vertical">
+
+        <ImageButton
+            android:id="@+id/btn_take_picture"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:srcCompat="@android:drawable/ic_menu_camera"/>
+
+        <ImageButton
+            android:id="@+id/btn_gallery"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:srcCompat="@android:drawable/ic_menu_gallery"/>
+
+        <ImageButton
+            android:id="@+id/btn_upload"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="false"
+            android:visibility="gone"
+            app:srcCompat="@android:drawable/ic_menu_upload"/>
+
+        <ImageButton
+            android:id="@+id/btn_refresh"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="false"
+            android:visibility="gone"
+            app:srcCompat="@android:drawable/ic_menu_revert"/>
+
+    </LinearLayout>
 
     <com.pocorusso.bearbeard.Preview
-        android:id="@+id/surface_view_preview"
+        android:id="@+id/preview_camera"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_alignParentLeft="true"
-        android:layout_weight=".70"
-        android:layout_toStartOf="@+id/btn_take_picture"/>
+        android:layout_toStartOf="@+id/linearLayout"/>
 
-
-
+    <ImageView
+        android:id="@+id/image_view_result"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:visibility="gone"/>
 
 </RelativeLayout>
