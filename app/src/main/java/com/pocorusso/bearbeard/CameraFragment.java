@@ -15,7 +15,9 @@ import android.widget.ImageButton;
 
 import java.io.File;
 
-public class CameraFragment extends Fragment implements CameraHandlerThread.CameraListener {
+public class CameraFragment extends Fragment
+        implements CameraHandlerThread.CameraListener,
+        CameraHandlerThread.UploadListener {
 
     private static String TAG = "CameraFragment";
     private static int DEFAULT_CAMERA_ID = 0;
@@ -25,6 +27,8 @@ public class CameraFragment extends Fragment implements CameraHandlerThread.Came
     ImageButton mBtnUpload;
     ImageButton mBtnRefresh;
     CameraHandlerThread mCameraHandlerThread;
+
+    File mFile;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -59,6 +63,8 @@ public class CameraFragment extends Fragment implements CameraHandlerThread.Came
         mBtnTakePicture.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                //reset picture
+                mFile = null;
 
                 //take picture here;
                 mCameraHandlerThread.takePicture();
@@ -71,6 +77,10 @@ public class CameraFragment extends Fragment implements CameraHandlerThread.Came
             @Override
             public void onClick(View view) {
                 //upload picture for processing
+                if(mFile!=null) {
+                   Uploader.getInstance(getActivity().getApplicationContext()).uploadFile(mFile);
+                    //TODO start progress spinner
+                }
 
             }
         });
@@ -86,16 +96,6 @@ public class CameraFragment extends Fragment implements CameraHandlerThread.Came
             }
         });
         return v;
-    }
-
-    /**
-     * Implementation of a method on CameraListener.
-     * This is always run the UI thread
-     */
-    @Override
-    public void onCameraOpened(int cameraId, Camera camera) {
-        Log.d(TAG, "onCameraOpened started.");
-        mPreview.setCamera(cameraId, camera);
     }
 
     /**
@@ -127,9 +127,25 @@ public class CameraFragment extends Fragment implements CameraHandlerThread.Came
         getActivity().sendBroadcast(mediaScanIntent);
     }
 
+    /**
+     * Implementation of a method on CameraListener.
+     * This is always run the UI thread
+     */
+    @Override
+    public void onCameraOpened(int cameraId, Camera camera) {
+        Log.d(TAG, "onCameraOpened started.");
+        mPreview.setCamera(cameraId, camera);
+    }
+
     @Override
     public void onPictureReady(File file) {
-       setButtonsState(ButtonsState.UPLOAD);
+        mFile = file;
+        setButtonsState(ButtonsState.UPLOAD);
+    }
+
+    @Override
+    public void onUploaded(File file) {
+        //TODO open file and display it.
     }
 
     private static enum ButtonsState {
@@ -161,6 +177,8 @@ public class CameraFragment extends Fragment implements CameraHandlerThread.Came
             default:
                 //do nothing
         }
-
     }
+
+
+
 }

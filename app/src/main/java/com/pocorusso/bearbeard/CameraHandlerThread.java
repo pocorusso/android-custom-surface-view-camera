@@ -16,6 +16,10 @@ public class CameraHandlerThread extends HandlerThread {
         void onPictureReady(File file);
     }
 
+    public interface UploadListener {
+        void onUploaded(File file);
+    }
+
     private static String TAG = "CameraHandlerThread";
     private static final int CAMERA_OPEN = 0;
     private static final int SAVE_PICTURE = 1;
@@ -157,6 +161,9 @@ public class CameraHandlerThread extends HandlerThread {
         }
     }
 
+    private void uploadPicture() {
+
+    }
 
     Camera.ShutterCallback mShutterCallback = new Camera.ShutterCallback() {
         public void onShutter() {

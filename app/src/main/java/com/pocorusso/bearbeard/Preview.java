@@ -192,7 +192,7 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
                 if (newSize != mPreviewSize) {
                     mPreviewSize = newSize;
                     // stop preview before making changes
-                    setPreviewSize();
+                    //setPreviewSize();
                 }
             }
 
