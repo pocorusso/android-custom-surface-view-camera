@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.hardware.Camera;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -38,6 +37,7 @@ public class CameraFragment extends Fragment
 
     CameraHandlerThread mCameraHandlerThread;
     Uploader mUploader;
+    CameraAdapter mCameraAdapter;
 
     File mFile;
 
@@ -46,6 +46,7 @@ public class CameraFragment extends Fragment
         Log.d(TAG, "onCreate started.");
         super.onCreate(savedInstanceState);
         mUploader = Uploader.getInstance(getActivity().getApplicationContext());
+        mCameraAdapter = CameraAdapter.getInstance(getActivity());
 
         Handler responseHandler = new Handler();//creating the response handler on the UI thread
         mCameraHandlerThread = new CameraHandlerThread(TAG, getActivity(), responseHandler, this);
@@ -175,8 +176,7 @@ public class CameraFragment extends Fragment
     }
 
     private void releaseCamera() {
-        mCameraHandlerThread.releaseCameraAndPreview();
-        mPreview.setCamera(0,null);
+        mCameraAdapter.releaseCamera();
     }
 
     /**
@@ -203,9 +203,9 @@ public class CameraFragment extends Fragment
      * This is always run the UI thread
      */
     @Override
-    public void onCameraOpened(int cameraId, Camera camera) {
+    public void onCameraOpened() {
         Log.d(TAG, "onCameraOpened started.");
-        mPreview.setCamera(cameraId, camera);
+        mPreview.initCameraSurfaceHolder();
     }
 
     @Override
@@ -219,6 +219,7 @@ public class CameraFragment extends Fragment
         TAKE_PICTURE,
         UPLOAD
     }
+
     private void setButtonsState(ButtonsState state) {
         switch(state) {
             case TAKE_PICTURE:
