@@ -1,11 +1,14 @@
 package com.pocorusso.bearbeard;
 
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.hardware.Camera;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
@@ -17,10 +20,13 @@ import android.widget.ImageView;
 
 import java.io.File;
 
+import static android.app.Activity.RESULT_OK;
+
 public class CameraFragment extends Fragment
         implements CameraHandlerThread.CameraListener{
 
     private static String TAG = "CameraFragment";
+    private static int PICK_GALLERY_IMAGE = 1;
     private static int DEFAULT_CAMERA_ID = 0;
 
     Preview mPreview;
@@ -52,9 +58,7 @@ public class CameraFragment extends Fragment
     public void onResume() {
         Log.d(TAG, "onResume started.");
         super.onResume();
-
-        //open camera on a background thread via an handler
-        mCameraHandlerThread.queueOpenCamera(DEFAULT_CAMERA_ID);
+        obtainCamera();
     }
 
     @Override
@@ -64,6 +68,7 @@ public class CameraFragment extends Fragment
         View v = inflater.inflate(R.layout.fragment_camera, container, false);
         mPreview = (Preview) v.findViewById(R.id.preview_camera);
         mImageViewResult = (ImageView) v.findViewById(R.id.image_view_result);
+
 
         mBtnTakePicture = (ImageButton)v.findViewById(R.id.btn_take_picture);
         mBtnTakePicture.setOnClickListener(new View.OnClickListener() {
@@ -88,8 +93,15 @@ public class CameraFragment extends Fragment
                            .uploadFile(mFile, new Uploader.UploadListener() {
                                @Override
                                public void onUploaded(Bitmap bitmap) {
-                                   mImageViewResult.setVisibility(View.VISIBLE);
-                                   mImageViewResult.setImageBitmap(bitmap);
+
+                                   if (bitmap!=null) {
+                                       mImageViewResult.setVisibility(View.VISIBLE);
+                                       mImageViewResult.setImageBitmap(bitmap);
+
+                                       //we have a preview bitmap
+                                       //we can release the camera
+                                       releaseCamera();
+                                   }
                                }
 
                                @Override
@@ -108,12 +120,42 @@ public class CameraFragment extends Fragment
             @Override
             public void onClick(View view) {
                 //retake picture
-                mCameraHandlerThread.cameraStartPreview();
-
+                obtainCamera();
                 setButtonsState(ButtonsState.TAKE_PICTURE);
             }
         });
+
+        mBtnGallery = (ImageButton) v.findViewById(R.id.btn_gallery);
+        mBtnGallery.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // Create the Intent for Image Gallery.
+                Intent i = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+
+                // Start new activity with the LOAD_IMAGE_RESULTS to handle back the results when image is picked from the Image Gallery.
+                startActivityForResult(i, PICK_GALLERY_IMAGE);
+            }
+        });
         return v;
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        //handle return from activity to pick gallery image
+        if (requestCode == PICK_GALLERY_IMAGE && resultCode == RESULT_OK && data != null) {
+            Uri pickedImage = data.getData();
+            String[] filePath = { MediaStore.Images.Media.DATA };
+            Cursor cursor = getActivity().getContentResolver().query(pickedImage, filePath, null, null, null);
+            cursor.moveToFirst();
+            String imagePath = cursor.getString(cursor.getColumnIndex(filePath[0]));
+
+            //set the image picked into the resulting view
+            mImageViewResult.setImageBitmap(BitmapFactory.decodeFile(imagePath));
+            mImageViewResult.setVisibility(View.VISIBLE);
+            cursor.close();
+        }
     }
 
     /**
@@ -123,6 +165,16 @@ public class CameraFragment extends Fragment
     public void onPause() {
         Log.d(TAG, "onPause started.");
         super.onPause();
+        releaseCamera();
+    }
+
+
+    private void obtainCamera(){
+        //open camera on a background thread via an handler
+        mCameraHandlerThread.queueOpenCamera(DEFAULT_CAMERA_ID);
+    }
+
+    private void releaseCamera() {
         mCameraHandlerThread.releaseCameraAndPreview();
         mPreview.setCamera(0,null);
     }
@@ -160,6 +212,7 @@ public class CameraFragment extends Fragment
     public void onPictureReady(File file) {
         mFile = file;
         setButtonsState(ButtonsState.UPLOAD);
+        releaseCamera();
     }
 
     private static enum ButtonsState {

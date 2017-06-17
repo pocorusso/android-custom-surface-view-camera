@@ -52,8 +52,8 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
     }
 
 
-
-    /** The calling thread should already stop and release the camera
+    /**
+     * The calling thread should already stop and release the camera
      * before they set the camera
      */
     public void setCamera(int cameraId, Camera camera) {
@@ -89,6 +89,13 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
     }
 
 
+    /**
+     * Compensate for the camera angle and set it to mirror image because
+     * that's what people expect.
+     *
+     * @param cameraId the camera id from 0-n where n = max # of camera - 1
+     * @param camera   the camera object
+     */
     private void setCameraDisplayOrientation(int cameraId, android.hardware.Camera camera) {
         android.hardware.Camera.CameraInfo info =
                 new android.hardware.Camera.CameraInfo();
@@ -122,24 +129,6 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
     }
 
 
-    /**
-     * When this function returns, mCamera will be null.
-     */
-    private void stopPreviewAndFreeCamera() {
-
-        if (mCamera != null) {
-            // Call stopPreview() to stop updating the preview surface.
-            mCamera.stopPreview();
-
-            // Important: Call release() to release the camera for use by other
-            // applications. Applications should release the camera immediately
-            // during onPause() and re-open() it during onResume()).
-            mCamera.release();
-
-            mCamera = null;
-        }
-    }
-
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
 
@@ -157,7 +146,7 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
                 previewHeight = mPreviewSize.height;
             }
 
-            Log.d(TAG, "onLayout previewWidth=" + previewWidth + ", previewHeight="+previewHeight);
+            Log.d(TAG, "onLayout previewWidth=" + previewWidth + ", previewHeight=" + previewHeight);
             // Center the child SurfaceView within the parent.
             if (width * previewHeight > height * previewWidth) {
                 final int scaledChildWidth = previewWidth * height / previewHeight;
@@ -183,7 +172,9 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
         final int height = resolveSize(getSuggestedMinimumHeight(), heightMeasureSpec);
         setMeasuredDimension(width, height);
 
+
         if (mCamera != null) {
+
             List<Camera.Size> supportedPreviewSizes = mCamera.getParameters().getSupportedPreviewSizes();
             if (supportedPreviewSizes != null) {
                 Log.d(TAG, "measuredSize w=" + width + ", h=" + height);
@@ -191,13 +182,9 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
                 Log.d(TAG, "newSize w=" + newSize.width + ", h=" + newSize.height);
                 if (newSize != mPreviewSize) {
                     mPreviewSize = newSize;
-                    // stop preview before making changes
-                    //setPreviewSize();
                 }
             }
-
         }
-
     }
 
     private Size getOptimalPreviewSize(List<Size> sizes, int w, int h) {
@@ -226,8 +213,8 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
             double ratio = (double) size.width / size.height;
             //Log.d(TAG, "Trying ratio=" + ratio + ", w=" + size.width + ", h=" + size.height);
 
-           //find the optimal ratio
-            if(Math.abs(ratio - targetRatio) < minDiff) {
+            //find the optimal ratio
+            if (Math.abs(ratio - targetRatio) < minDiff) {
                 optimalSize = size;
                 minDiff = Math.abs(ratio - targetRatio);
             }
@@ -249,9 +236,6 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
                 e.printStackTrace();
             }
         }
-
-        // The Surface has been created, acquire the camera and tell it where
-        // to draw.
     }
 
     @Override

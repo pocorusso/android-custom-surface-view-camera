@@ -26,7 +26,7 @@ public class CameraHandlerThread extends HandlerThread {
     private boolean mHasQuit = false;
     private Camera mCamera;
     private int mCameraId;
-    private CameraListener mCameraListener; //listner to run on UI thread via response handler
+    private CameraListener mCameraListener; //listener to run on UI thread via response handler
 
     /**
      * Constructor
@@ -90,10 +90,11 @@ public class CameraHandlerThread extends HandlerThread {
      * Called from the UI thread to queue up work to
      * open the camera
      *
-     * @param cameraId
+     * @param cameraId the camera id to be open.
      */
     public void queueOpenCamera(int cameraId) {
         Log.d(TAG, "Queue request to open camera");
+        mCameraId = cameraId;
         mRequestHandler.obtainMessage(CAMERA_OPEN, cameraId).sendToTarget();
     }
 
@@ -109,15 +110,9 @@ public class CameraHandlerThread extends HandlerThread {
         }
     }
 
-    public void cameraStartPreview() {
-        Log.d(TAG, "cameraStartPreview");
-        mCamera.startPreview();
-    }
-
 
     private Camera safeCameraOpen(int cameraId) {
         Log.d(TAG, "safeCameraOpen");
-        boolean qOpened = false;
         Camera camera = null;
         try {
             releaseCameraAndPreview();
@@ -153,40 +148,30 @@ public class CameraHandlerThread extends HandlerThread {
 
     public void takePicture() {
         if (mCamera != null) {
-            mCamera.takePicture(mShutterCallback, mRawCallback, mJpegCallback);
+            mCamera.takePicture(
+                    new Camera.ShutterCallback() { //shutter on click listening
+                        @Override
+                        public void onShutter() {
+                            //do nothing
+                        }
+                    }, new Camera.PictureCallback() { //raw picture hanlding
+                        @Override
+                        public void onPictureTaken(byte[] bytes, Camera camera) {
+                           //do nothing
+                        }
+                    }, new Camera.PictureCallback() { //jpeg picture handling
+                        @Override
+                        public void onPictureTaken(byte[] bytes, Camera camera) {
+                            //call back for handling jpeg picture
+                            Log.d(TAG, "onPictureTaken - jpeg");
+                            mRequestHandler.obtainMessage(SAVE_PICTURE, bytes).sendToTarget();
+
+                            //For some reason the camera does not stop the preview after
+                            //take picture after the first time so we have to
+                            //manually stop the preview? Something to look into
+                            mCamera.stopPreview();
+                        }
+                    });
         }
     }
-
-    private void uploadPicture() {
-
-    }
-
-    Camera.ShutterCallback mShutterCallback = new Camera.ShutterCallback() {
-        public void onShutter() {
-            //			 Log.d(TAG, "onShutter'd");
-        }
-    };
-
-    Camera.PictureCallback mRawCallback = new Camera.PictureCallback() {
-        @Override
-        public void onPictureTaken(byte[] bytes, Camera camera) {
-
-        }
-    };
-
-    Camera.PictureCallback mJpegCallback = new Camera.PictureCallback() {
-        public void onPictureTaken(byte[] data, Camera camera) {
-            Log.d(TAG, "onPictureTaken - jpeg");
-            mRequestHandler.obtainMessage(SAVE_PICTURE, data).sendToTarget();
-
-            //For some reason the camera does not stop the preview after
-            //take picture after the first time so we have to
-            //manually stop the preview? Something to look into
-            mCamera.stopPreview();
-        }
-    };
-
-
-
-
 }
