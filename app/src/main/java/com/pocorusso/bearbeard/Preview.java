@@ -93,7 +93,7 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
         final int height = resolveSize(getSuggestedMinimumHeight(), heightMeasureSpec);
         setMeasuredDimension(width, height);
 
-       // mCameraAdapter.adjustPreviewSize(width, height);
+        mCameraAdapter.adjustPreviewSize(width, height);
     }
 
 

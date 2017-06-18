@@ -37,12 +37,13 @@ public class CameraAdapter {
     }
 
     public boolean isValid() {
-        return mCamera == null || mPreviewSize == null;
+        return mCamera != null;
     }
 
     public void openCamera(int cameraId) {
         mCameraId = cameraId;
         mCamera = safeCameraOpen(cameraId);
+        Log.d(TAG, "exit openCamera mCamera is null:" + (mCamera == null));
     }
 
     public void releaseCamera() {
@@ -104,7 +105,7 @@ public class CameraAdapter {
     }
 
     public void adjustCameraPreviewSize() {
-        if (mPreviewSize != null) {
+        if (mPreviewSize != null && mCamera!=null) {
             Log.d(TAG, "adjustCameraPreviewSize: w=" + mPreviewSize.width + " ,h=" + mPreviewSize.height);
             // stop preview before making changes
             this.stopPreview();
@@ -226,6 +227,8 @@ public class CameraAdapter {
         } else {
             targetRatio = (double) w / h;
         }
+
+
 
         Log.d(TAG, "TargetRatio=" + targetRatio);
 
