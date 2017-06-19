@@ -229,7 +229,6 @@ public class CameraAdapter {
         }
 
 
-
         Log.d(TAG, "TargetRatio=" + targetRatio);
 
         // Try to find an size match aspect ratio and size

@@ -1,6 +1,7 @@
 package com.pocorusso.bearbeard;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.hardware.Camera.Size;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -62,25 +63,64 @@ class Preview extends ViewGroup implements SurfaceHolder.Callback {
 
             int previewWidth = width;
             int previewHeight = height;
+            double scaledRatio = 1.0;
             Size previewSize = mCameraAdapter.getPreviewSize();
+            int scaledHeight;
+            int scaledWidth;
             if (previewSize != null) {
-                previewWidth = previewSize.width;
-                previewHeight = previewSize.height;
+                if (getContext().getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+                    previewWidth = previewSize.height;
+                    previewHeight = previewSize.width;
+                    scaledRatio = (double)width/previewWidth;
+                    scaledHeight = (int)(((double)previewHeight) * scaledRatio) ;
+                    child.layout(0,0, width, Math.min(scaledHeight, height));
+
+                    Log.d(TAG, "onLayout previewWidth=" + previewWidth
+                            + ", previewHeight=" + previewHeight
+                            + ", scaledRatio=" + scaledRatio
+                            + ", scaledHeight=" + scaledHeight
+                            + ", h=" + height
+                            + ", w=" + width);
+                } else {
+                    previewWidth = previewSize.width;
+                    previewHeight = previewSize.height;
+
+                    scaledRatio = (double)height/previewHeight;
+                    scaledWidth = (int)(((double)previewWidth) * scaledRatio) ;
+                    child.layout(0,0, Math.min(scaledWidth, width),height);
+
+                    Log.d(TAG, "onLayout previewWidth=" + previewWidth
+                            + ", previewHeight=" + previewHeight
+                            + ", scaledWidth=" + previewWidth*scaledRatio
+                            + ", scaledRatio=" + scaledRatio
+                            + ", scaledWidth=" + scaledWidth
+                            + ", h=" + height
+                            + ", w=" + width);
+                }
+            } else {
+                //no set height
+                Log.d(TAG, "onLayout width=" + width + ", height=" + height);
+                child.layout(0,0,width,height);
             }
 
-            Log.d(TAG, "onLayout previewWidth=" + previewWidth + ", previewHeight=" + previewHeight);
-            // Center the child SurfaceView within the parent.
-            if (width * previewHeight > height * previewWidth) {
-                final int scaledChildWidth = previewWidth * height / previewHeight;
-                Log.d(TAG, "onLayout scaledChildWidth=" + scaledChildWidth);
-                child.layout((width - scaledChildWidth) / 2, 0,
-                        (width + scaledChildWidth) / 2, height);
-            } else {
-                final int scaledChildHeight = previewHeight * width / previewWidth;
-                Log.d(TAG, "onLayout scaledChildHeight=" + scaledChildHeight);
-                child.layout(0, (height - scaledChildHeight) / 2,
-                        width, (height + scaledChildHeight) / 2);
-            }
+            int aspectRatio = previewWidth/previewHeight;
+
+
+
+
+//            // Center the child SurfaceView within the parent.
+//            if (width * previewHeight > height * previewWidth) {
+//                final int scaledChildWidth = previewWidth * height / previewHeight;
+//                Log.d(TAG, "onLayout scaledChildWidth=" + scaledChildWidth);
+//                child.layout((width - scaledChildWidth) / 2, 0,
+//                        (width + scaledChildWidth) / 2, height);
+//            } else {
+//                final int scaledChildHeight = previewHeight * width / previewWidth;
+//                Log.d(TAG, "onLayout scaledChildHeight=" + scaledChildHeight);
+//                child.layout(0, (height - scaledChildHeight) / 2,
+//                        width, (height + scaledChildHeight) / 2);
+//            }
+
         }
     }
 
